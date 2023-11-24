@@ -4,11 +4,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
+
 def process_dataset(dataset_directory):
+    all_face_sizes = []
+
     for filename in os.listdir(dataset_directory):
-        if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+        if filename.lower().endswith(('.png', '.jpg', '.jpeg')):  # Checking for image files
             file_path = os.path.join(dataset_directory, filename)
-            process_image(file_path)
+            image = cv2.imread(file_path)
+            if image is not None:
+                _, _, face_sizes = detect_faces(image, draw_rectangle=False)
+                all_face_sizes.extend(face_sizes)  # Accumulate face sizes
+
+    # After processing all images, plot the cumulative data
+    plot_face_data(all_face_sizes)
 
 
 
@@ -26,11 +35,30 @@ def detect_faces(image, draw_rectangle=True):
     return image, faces, face_sizes
 
 def plot_face_data(face_sizes):
-    plt.hist(face_sizes, bins=10)
-    plt.title('Distribution of Face Sizes')
-    plt.xlabel('Face Area')
+    if not face_sizes:
+        print("No faces detected in the dataset.")
+        return
+
+    mean_size = np.mean(face_sizes)
+    median_size = np.median(face_sizes)
+    min_size = min(face_sizes)
+    max_size = max(face_sizes)
+
+    plt.hist(face_sizes, bins=30, color='skyblue', edgecolor='black')
+
+    plt.axvline(mean_size, color='red', linestyle='dashed', linewidth=2, label=f'Mean: {mean_size:.2f}')
+    plt.axvline(median_size, color='green', linestyle='dashed', linewidth=2, label=f'Median: {median_size:.2f}')
+
+    plt.title('Distribution of Face Sizes in the Dataset')
+    plt.xlabel('Face Area (pixels²)')
     plt.ylabel('Frequency')
+    plt.legend()
+
     plt.show()
+
+    # Print basic statistics
+    print(f"Basic Statistics:\nMin Size: {min_size}\nMax Size: {max_size}\nMean Size: {mean_size:.2f}\nMedian Size: {median_size:.2f}")
+
 
 def process_image(file_path):
     image = cv2.imread(file_path)
@@ -137,5 +165,7 @@ if __name__  == "__main__":
         process_video(file_path)
     elif mode == 'live':
         live_video()
+    elif mode == 'dataset':
+        process_dataset(file_path)
     else:
         print("Invalid mode")
