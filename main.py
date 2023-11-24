@@ -2,6 +2,14 @@ import cv2
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
+import os
+
+def process_dataset(dataset_directory):
+    for filename in os.listdir(dataset_directory):
+        if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+            file_path = os.path.join(dataset_directory, filename)
+            process_image(file_path)
+
 
 
 def detect_faces(image, draw_rectangle=True):
