@@ -28,7 +28,7 @@ def process_image(file_path):
     image = cv2.imread(file_path)
     if image is not None:
         detected_image, faces, face_sizes = detect_faces(image)
-        plot_face_data(face_sizes)  # Display EDA plot for this image
+        plot_face_data(face_sizes)
         cv2.imshow('Faces', detected_image)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
@@ -38,7 +38,6 @@ def process_image(file_path):
 
 
 def augment_image(image):
-    # Randomly choose a type of augmentation
     augmentation_type = np.random.choice(['flip_horizontal', 'flip_vertical', 'rotate'])
 
     if augmentation_type == 'flip_horizontal':
@@ -63,7 +62,7 @@ def process_image_with_augmentation(file_path):
 
         # Process the augmented image
         detected_image, faces, face_sizes = detect_faces(augmented_image)
-        plot_face_data(face_sizes)  # Display EDA plot for this image
+        plot_face_data(face_sizes)
         cv2.imshow('Original Image', original_image)
         cv2.imshow('Augmented Image', detected_image)
         cv2.waitKey(0)
@@ -91,7 +90,7 @@ def process_video(file_path):
 
     video.release()
     cv2.destroyAllWindows()
-    plot_face_data(all_face_sizes)  # Plot EDA for the video after processing
+    plot_face_data(all_face_sizes)
 
 
 def live_video():
@@ -111,7 +110,7 @@ def live_video():
 
     video.release()
     cv2.destroyAllWindows()
-    plot_face_data(all_face_sizes)  # Plot EDA for the live feed after processing
+    plot_face_data(all_face_sizes)
 
 
 if __name__  == "__main__":
