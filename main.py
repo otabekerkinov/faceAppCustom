@@ -124,8 +124,8 @@ if __name__  == "__main__":
     file_path = sys.argv[2]
 
     if mode == 'image':
-        #process_image(file_path)
-        process_image_with_augmentation(file_path)
+        process_image(file_path)
+        #process_image_with_augmentation(file_path)
     elif mode == 'video':
         process_video(file_path)
     elif mode == 'live':
