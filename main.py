@@ -3,6 +3,42 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import torch
+from torchvision import transforms
+import torchvision.models as models
+import torch.nn as nn
+from PIL import Image
+
+
+# Load the trained age detection model
+model = models.resnet18(pretrained=False)
+model.fc = nn.Linear(model.fc.in_features, 1)
+model.load_state_dict(torch.load('best_age_detection_model.pth'))
+model.eval()
+
+
+
+# Define device
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+model = model.to(device)
+
+# Define transform for age prediction
+age_transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+])
+
+
+def predict_age(face_image):
+    """
+    Predict the age of a face.
+    """
+    face_image = age_transform(face_image).unsqueeze(0).to(device)
+    with torch.no_grad():
+        age_prediction = model(face_image).item()
+    return age_prediction
+
 
 # process_dataset processes all images of a given directory and plots the cumulative data
 def process_dataset(dataset_directory):
@@ -30,6 +66,19 @@ def detect_faces(image):
     for (x, y, w, h) in faces:
         cv2.rectangle(image, (x, y), (x+w, y+h), (0, 255, 0), 2)
         face_sizes.append(w*h)  # Adding face size (area) for EDA
+
+    for (x, y, w, h) in faces:
+        # Extract each face
+        face_image = image[y:y+h, x:x+w]
+        face_image_pil = Image.fromarray(face_image)  # Convert to PIL image
+
+        # Predict age
+        predicted_age = predict_age(face_image_pil)
+
+        # Draw rectangle and put text (age)
+        cv2.rectangle(image, (x, y), (x+w, y+h), (0, 255, 0), 2)
+        cv2.putText(image, f'Age: {int(predicted_age)}', (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (36,255,12), 2)
+
 
     return image, faces, face_sizes
 
@@ -63,13 +112,13 @@ def plot_face_data(face_sizes):
 def process_image(file_path):
     image = cv2.imread(file_path)
     if image is not None:
-        detected_image, faces, face_sizes = detect_faces(image)
-        cv2.imshow('Faces', detected_image)
-        plot_face_data(face_sizes)
+        detected_image, _, _ = detect_faces(image)
+        cv2.imshow('Faces with Age Predictions', detected_image)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
     else:
         print("Error: Image not found")
+
 
 
 
