@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-
+# process_dataset processes all images of a given directory and plots the cumulative data
 def process_dataset(dataset_directory):
     all_face_sizes = []
 
@@ -13,27 +13,27 @@ def process_dataset(dataset_directory):
             file_path = os.path.join(dataset_directory, filename)
             image = cv2.imread(file_path)
             if image is not None:
-                _, _, face_sizes = detect_faces(image, draw_rectangle=False)
+                _, _, face_sizes = detect_faces(image)
                 all_face_sizes.extend(face_sizes)  # Accumulate face sizes
 
     # After processing all images, plot the cumulative data
     plot_face_data(all_face_sizes)
 
 
-
-def detect_faces(image, draw_rectangle=True):
+# detect_faces takes a cv2 image object and uses pretrained model to detect faces and draws a rectangle around it
+def detect_faces(image):
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30), flags=cv2.CASCADE_SCALE_IMAGE)
 
     face_sizes = []
     for (x, y, w, h) in faces:
-        if draw_rectangle:
-            cv2.rectangle(image, (x, y), (x+w, y+h), (0, 255, 0), 2)
+        cv2.rectangle(image, (x, y), (x+w, y+h), (0, 255, 0), 2)
         face_sizes.append(w*h)  # Adding face size (area) for EDA
 
     return image, faces, face_sizes
 
+# plot_face_data generates a histogram of dataset distribution (frequency of face sizes)
 def plot_face_data(face_sizes):
     if not face_sizes:
         print("No faces detected in the dataset.")
@@ -59,13 +59,13 @@ def plot_face_data(face_sizes):
     # Print basic statistics
     print(f"Basic Statistics:\nMin Size: {min_size}\nMax Size: {max_size}\nMean Size: {mean_size:.2f}\nMedian Size: {median_size:.2f}")
 
-
+# process_image takes a path to an image, processes it and show the result and the histogram
 def process_image(file_path):
     image = cv2.imread(file_path)
     if image is not None:
         detected_image, faces, face_sizes = detect_faces(image)
-        plot_face_data(face_sizes)
         cv2.imshow('Faces', detected_image)
+        plot_face_data(face_sizes)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
     else:
@@ -93,20 +93,16 @@ def augment_image(image):
 def process_image_with_augmentation(file_path):
     original_image = cv2.imread(file_path)
     if original_image is not None:
-        # Augment the image
-        augmented_image = augment_image(original_image)
-
+        for i in range(0, 10):
+            # Augment the image
+            augmented_image = augment_image(original_image)
         # Process the augmented image
-        detected_image, faces, face_sizes = detect_faces(augmented_image)
-        plot_face_data(face_sizes)
-        cv2.imshow('Original Image', original_image)
-        cv2.imshow('Augmented Image', detected_image)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+            detected_image, faces, face_sizes = detect_faces(augmented_image)
+            cv2.imshow('Augmented Image', detected_image)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
     else:
         print("Error: Image not found")
-
-
 
 
 def process_video(file_path):
@@ -158,9 +154,10 @@ if __name__  == "__main__":
     mode = sys.argv[1]
     file_path = sys.argv[2]
 
-    if mode == 'image':
+    if mode == 'aug_img':
+        process_image_with_augmentation(file_path)
+    elif mode == 'image':
         process_image(file_path)
-        #process_image_with_augmentation(file_path)
     elif mode == 'video':
         process_video(file_path)
     elif mode == 'live':
