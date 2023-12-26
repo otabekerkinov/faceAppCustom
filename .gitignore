@@ -1,2 +1,4 @@
 images/face_age
 .DS_Store
+age_dataset
+script.py
