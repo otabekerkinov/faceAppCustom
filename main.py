@@ -10,6 +10,10 @@ import torch.nn as nn
 from PIL import Image
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
+import tkinter as tk
+from tkinter import filedialog
+from tkinter import messagebox
+
 
 
 # Load the trained age detection model
@@ -250,24 +254,53 @@ def live_video():
     plot_face_data(all_face_sizes)
 
 
-if __name__  == "__main__":
-    if len(sys.argv) != 3:
-        print("Usage: python face_detection.py mode filepath")
-        print("mode: image, video, live")
-        sys.exit(1)
-
-    mode = sys.argv[1]
-    file_path = sys.argv[2]
-
-    if mode == 'aug_img':
-        process_image_with_augmentation(file_path)
-    elif mode == 'image':
+def select_image():
+    file_path = filedialog.askopenfilename()
+    if file_path:
         process_image(file_path)
-    elif mode == 'video':
+
+def select_video():
+    file_path = filedialog.askopenfilename()
+    if file_path:
         process_video(file_path)
-    elif mode == 'live':
-        live_video()
-    elif mode == 'dataset':
-        process_dataset(file_path)
-    else:
-        print("Invalid mode")
+
+def start_live_video():
+    live_video()
+
+# Create the main window
+root = tk.Tk()
+root.title("Face and Age Detection")
+
+# Create buttons
+btn_select_image = tk.Button(root, text="Select Image", command=select_image)
+btn_select_image.pack(padx=10, pady=10)
+
+btn_select_video = tk.Button(root, text="Select Video", command=select_video)
+btn_select_video.pack(padx=10, pady=10)
+
+btn_live_video = tk.Button(root, text="Start Live Video", command=start_live_video)
+btn_live_video.pack(padx=10, pady=10)
+
+
+if __name__  == "__main__":
+    root.mainloop()
+    # if len(sys.argv) != 3:
+    #     print("Usage: python face_detection.py mode filepath")
+    #     print("mode: image, video, live")
+    #     sys.exit(1)
+
+    # mode = sys.argv[1]
+    # file_path = sys.argv[2]
+
+    # if mode == 'aug_img':
+    #     process_image_with_augmentation(file_path)
+    # elif mode == 'image':
+    #     process_image(file_path)
+    # elif mode == 'video':
+    #     process_video(file_path)
+    # elif mode == 'live':
+    #     live_video()
+    # elif mode == 'dataset':
+    #     process_dataset(file_path)
+    # else:
+    #     print("Invalid mode")
