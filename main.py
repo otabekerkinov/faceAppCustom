@@ -15,6 +15,8 @@ from tkinter import filedialog
 from tkinter import messagebox
 
 
+failed_detections_file = 'failed_detections.txt'
+
 
 # Load the trained age detection model
 model = models.resnet18(pretrained=False)
@@ -82,8 +84,9 @@ def process_dataset(dataset_directory):
     for image_path, actual_age in actual_age_labels.items():
         image = cv2.imread(image_path)
         if image is not None:
-            # The detect_faces function now returns predicted ages instead of face sizes
-            _, _, predicted_ages = detect_faces(image)
+            file_name = os.path.basename(image_path)
+            # The detect_faces function now returns predicted ages instead of face sizes    
+            _, _, predicted_ages = detect_faces(image, file_name)
             # For each detected face, match the predicted age group with the actual age group
             for predicted_age in predicted_ages:
                 predicted_age_group = map_age_to_group(predicted_age)
@@ -126,12 +129,18 @@ def get_actual_age_labels(dataset_directory):
 
 
 # detect_faces takes a cv2 image object and uses pretrained model to detect faces and draws a rectangle around it
-def detect_faces(image):
+def detect_faces(image, file_name=""):
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30), flags=cv2.CASCADE_SCALE_IMAGE)
 
     predicted_ages = []  # List to store predicted ages
+    # Check if any faces were detected
+    if len(faces) == 0:
+        # Write the file name to the text file
+        if file_name:
+            with open(failed_detections_file, 'a') as file:
+                file.write(file_name + '\n')
     for (x, y, w, h) in faces:
        # Extract each face
        face_image = image[y:y+h, x:x+w]
@@ -174,7 +183,7 @@ def plot_age_data(predicted_ages):
 def process_image(file_path):
     image = cv2.imread(file_path)
     if image is not None:
-        detected_image, _, _ = detect_faces(image)
+        detected_image, _, _ = detect_faces(image, file_path)
         cv2.imshow('Faces with Age Predictions', detected_image)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
