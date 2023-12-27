@@ -240,7 +240,7 @@ def process_video(file_path):
 
     video.release()
     cv2.destroyAllWindows()
-    plot_face_data(all_face_sizes)
+    plot_age_data(all_face_sizes)
 
 
 def live_video():
@@ -260,7 +260,7 @@ def live_video():
 
     video.release()
     cv2.destroyAllWindows()
-    plot_face_data(all_face_sizes)
+    plot_age_data(all_face_sizes)
 
 
 def select_image():

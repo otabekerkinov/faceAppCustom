@@ -67,4 +67,4 @@ def process_images_in_folder(folder_path, postfix='_aug'):
 
 if __name__ == "__main__":
     # Assume the script is called with the folder path as the first argument
-    process_images_in_folder("./age_dataset")
+    process_images_in_folder("./images/face_age")
