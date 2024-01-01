@@ -147,6 +147,7 @@ def detect_faces(image, file_name=""):
        face_image_pil = Image.fromarray(face_image)  # Convert to PIL image
        # Predict age
        predicted_age = predict_age(face_image_pil)
+       print(int(predicted_age))
        predicted_ages.append(predicted_age)  # Append predicted age to the list
        # Draw rectangle and put text (age)
        cv2.rectangle(image, (x, y), (x+w, y+h), (0, 255, 0), 2)

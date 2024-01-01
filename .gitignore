@@ -2,3 +2,4 @@ images/face_age
 .DS_Store
 age_dataset
 script.py
+failed_detections.txt
