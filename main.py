@@ -94,7 +94,6 @@ def process_dataset(dataset_directory):
                 predicted_age_groups.append(predicted_age_group)
                 actual_age_groups.append(actual_age_group)
 
-    # At this point, actual_age_groups and predicted_age_groups should have the same length
     # Compute the confusion matrix and plot it
     compute_and_plot_confusion_matrix(actual_age_groups, predicted_age_groups)
 
@@ -274,6 +273,11 @@ def select_video():
     if file_path:
         process_video(file_path)
 
+def select_dataset():
+    file_path = filedialog.askdirectory()
+    if file_path:
+         process_dataset(file_path)
+
 def start_live_video():
     live_video()
 
@@ -290,6 +294,9 @@ btn_select_video.pack(padx=10, pady=10)
 
 btn_live_video = tk.Button(root, text="Start Live Video", command=start_live_video)
 btn_live_video.pack(padx=10, pady=10)
+
+btn_select_dataset = tk.Button(root, text="Select Dataset", command=select_dataset)
+btn_select_dataset.pack(padx=10, pady=10)
 
 
 if __name__  == "__main__":
