@@ -5,3 +5,7 @@ age_dataset_with_aug
 script.py
 failed_detections.txt
 progress.json
+/dist
+/build
+./failed_detections.txt
+main.spec

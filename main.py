@@ -21,7 +21,7 @@ failed_detections_file = 'failed_detections.txt'
 # Load the trained age detection model
 model = models.resnet18(pretrained=False)
 model.fc = nn.Linear(model.fc.in_features, 1)
-model.load_state_dict(torch.load('best_age_detection_model.pth'))
+model.load_state_dict(torch.load('best_age_detection_model_more_layers_saved.pth'))
 model.eval()
 
 

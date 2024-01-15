@@ -12,8 +12,17 @@ from torch.utils.data import random_split
 # Load a pre-trained ResNet
 model = models.resnet18(pretrained=True)
 
-# Replace the final fully connected layer with a new one with the desired output size
-# Assuming we are treating age prediction as a regression problem
+# Freeze all layers first
+for param in model.parameters():
+    param.requires_grad = False
+
+# Unfreeze layers for fine-tuning
+for param in model.layer4.parameters():
+    param.requires_grad = True
+for param in model.layer3.parameters():
+    param.requires_grad = True
+
+# Replace the final fully connected layer
 model.fc = nn.Linear(model.fc.in_features, 1)
 
 
@@ -39,8 +48,8 @@ val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
 # Loss function
 criterion = nn.MSELoss()
 
-# Optimizer
-optimizer = optim.Adam(model.parameters(), lr=0.001)
+# Optimizer - Only optimize parameters that require gradients
+optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=0.001)
 
 # Define device: use CUDA if available
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -98,7 +107,7 @@ for epoch in range(num_epochs):
     # Check if this is the best model so far
     if val_loss < best_val_loss:
         best_val_loss = val_loss
-        torch.save(model.state_dict(), 'best_age_detection_model.pth')  # Save best model
+        torch.save(model.state_dict(), 'best_age_detection_model_more_layers_saved.pth')  # Save best model
 
 
 
