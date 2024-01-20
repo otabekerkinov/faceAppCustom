@@ -18,17 +18,61 @@ from tkinter import messagebox
 failed_detections_file = 'failed_detections.txt'
 
 
+if getattr(sys, 'frozen', False):
+    # The application is running as a PyInstaller bundle
+    application_path = sys._MEIPASS
+else:
+    # The application is running as a normal Python script
+    application_path = os.path.dirname(os.path.abspath(__file__))
+
+failed_detections_file = os.path.join(application_path, 'failed_detections.txt')
+
+
+## NEEDED TO USE THE DROPOUT MODEL
+class CustomResNet(nn.Module):
+    def __init__(self, original_model, dropout_rate=0.5):
+        super(CustomResNet, self).__init__()
+        # Everything up to the last layer of layer4
+        self.features = nn.Sequential(*list(original_model.children())[:-2])
+        
+        # New dropout layer
+        self.dropout = nn.Dropout(dropout_rate)
+
+        # The last layer of layer4
+        self.layer4 = list(original_model.children())[-2]
+
+        # The original fully connected layer is replaced with a new one
+        self.fc = nn.Linear(original_model.fc.in_features, 1)
+    
+    def forward(self, x):
+        x = self.features(x)
+        x = self.layer4(x)
+        x = torch.flatten(x, 1)  # Flatten the features out
+        x = self.dropout(x)  # Apply dropout
+        x = self.fc(x)
+        return x
+
+
+model_path = os.path.join(application_path, 'best_age_detection_model_dropout_layer.pth')
+
+# Load the pre-trained ResNet model
+original_model = models.resnet18(pretrained=False)
+# Instantiate the custom model
+model = CustomResNet(original_model)
+
+
+
 # Load the trained age detection model
-model = models.resnet18(pretrained=False)
-model.fc = nn.Linear(model.fc.in_features, 1)
-model.load_state_dict(torch.load('best_age_detection_model_more_layers_saved.pth'))
+#model = models.resnet18(pretrained=False)
+#model.fc = nn.Linear(model.fc.in_features, 1)
+# Define device
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+model = model.to(device)
+model.load_state_dict(torch.load(model_path, map_location=device))
 model.eval()
 
 
 
-# Define device
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-model = model.to(device)
 
 # Define transform for age prediction
 age_transform = transforms.Compose([

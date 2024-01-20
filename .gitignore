@@ -7,5 +7,6 @@ failed_detections.txt
 progress.json
 /dist
 /build
-./failed_detections.txt
+/failed_detections.txt
 main.spec
+failed_detections.txt

@@ -9,18 +9,43 @@ from torch.utils.data import random_split
 
 
 
-# Load a pre-trained ResNet
-model = models.resnet18(pretrained=True)
+class CustomResNet(nn.Module):
+    def __init__(self, original_model, dropout_rate=0.5):
+        super(CustomResNet, self).__init__()
+        # Everything up to the last layer of layer4
+        self.features = nn.Sequential(*list(original_model.children())[:-2])
+        
+        # New dropout layer
+        self.dropout = nn.Dropout(dropout_rate)
+
+        # The last layer of layer4
+        self.layer4 = list(original_model.children())[-2]
+
+        # The original fully connected layer is replaced with a new one
+        self.fc = nn.Linear(original_model.fc.in_features, 1)
+    
+    def forward(self, x):
+        x = self.features(x)
+        x = self.layer4(x)
+        x = torch.flatten(x, 1)  # Flatten the features out
+        x = self.dropout(x)  # Apply dropout
+        x = self.fc(x)
+        return x
+
+# Load the pre-trained ResNet model
+original_model = models.resnet18(pretrained=True)
+# Instantiate the custom model
+model = CustomResNet(original_model)
+
 
 # Freeze all layers first
-for param in model.parameters():
+for param in model.features.parameters():
     param.requires_grad = False
 
-# Unfreeze layers for fine-tuning
+# Unfreeze the last block (layer4) for fine-tuning
 for param in model.layer4.parameters():
     param.requires_grad = True
-for param in model.layer3.parameters():
-    param.requires_grad = True
+
 
 # Replace the final fully connected layer
 model.fc = nn.Linear(model.fc.in_features, 1)
@@ -48,8 +73,9 @@ val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
 # Loss function
 criterion = nn.MSELoss()
 
-# Optimizer - Only optimize parameters that require gradients
-optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=0.001)
+# Optimizer with weight decay
+optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=0.001, weight_decay=1e-5)
+
 
 # Define device: use CUDA if available
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -107,7 +133,7 @@ for epoch in range(num_epochs):
     # Check if this is the best model so far
     if val_loss < best_val_loss:
         best_val_loss = val_loss
-        torch.save(model.state_dict(), 'best_age_detection_model_more_layers_saved.pth')  # Save best model
+        torch.save(model.state_dict(), 'best_age_detection_model_dropout_layer.pth')  # Save best model
 
 
 
