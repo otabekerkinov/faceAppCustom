@@ -349,7 +349,7 @@ model_var.set("Select a model")  # default value
 
 models_dropdown = ttk.Combobox(root, textvariable=model_var)
 models_dropdown['values'] = (
-    "CustomResNet with dropout and scheduler",
+    "CustomResNet with dropout and scheduler no aug",
     "CustomResNet with dropout",
     "CustomResNet with more layers",
     "Standard ResNet with aug"
