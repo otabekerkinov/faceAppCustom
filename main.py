@@ -13,6 +13,7 @@ import seaborn as sns
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import messagebox
+from tkinter import ttk
 from modelHandlers import *
 
 failed_detections_file = 'failed_detections.txt'
@@ -28,15 +29,15 @@ else:
 failed_detections_file = os.path.join(application_path, 'failed_detections.txt')
 
 
-def select_model():
-    print("Select a model to use:")
-    print("1: CustomResNet with dropout and scheduler")
-    print("2: CustomResNet with dropout")
-    print("3: CustomGoogLeNet with layer params")
-    print("4: CustomResNet with more layers")
-    print("5: Standard ResNet")
+def select_model(choice):
+    # print("Select a model to use:")
+    # print("1: CustomResNet with dropout and scheduler")
+    # print("2: CustomResNet with dropout")
+    # print("3: CustomGoogLeNet with layer params")
+    # print("4: CustomResNet with more layers")
+    # print("5: Standard ResNet")
 
-    choice = input("Enter the number of the model: ")
+    # choice = input("Enter the number of the model: ")
 
     if choice == '1':
         model_path = os.path.join(application_path, 'best_age_detection_model_dropout_layer_with_scheduler_diff_params.pth')
@@ -323,9 +324,55 @@ def select_dataset():
 def start_live_video():
     live_video()
 
+
+def load_model(choice):
+    model, model_path = select_model(choice)
+    model = model.to(device)
+    model.load_state_dict(torch.load(model_path, map_location=device))
+    model.eval()
+    return model
+
+# Model selection handling
+def on_model_select(event):
+    global model  # Use the global model variable to store the loaded model
+
+    # Map model names to choice numbers
+    model_choices = {
+        "CustomResNet with dropout and scheduler": '1',
+        "CustomResNet with dropout": '2',
+        "CustomGoogLeNet with layer params": '3',
+        "CustomResNet with more layers": '4',
+        "Standard ResNet": '5'
+    }
+
+    model_name = model_var.get()
+    model_choice = model_choices.get(model_name)
+
+    if model_choice is not None:
+        model = load_model(model_choice)
+        messagebox.showinfo("Model Loaded", f"You have selected {model_name} model.")
+    else:
+        messagebox.showerror("Error", "Invalid model choice.")
+
 # Create the main window
 root = tk.Tk()
 root.title("Face and Age Detection")
+
+# Model selection dropdown
+model_var = tk.StringVar(root)
+model_var.set("Select a model")  # default value
+
+models_dropdown = ttk.Combobox(root, textvariable=model_var)
+models_dropdown['values'] = (
+    "CustomResNet with dropout and scheduler",
+    "CustomResNet with dropout",
+    "CustomGoogLeNet with layer params",
+    "CustomResNet with more layers",
+    "Standard ResNet with aug"
+)
+models_dropdown.pack(padx=10, pady=10)
+models_dropdown.bind('<<ComboboxSelected>>', on_model_select)
+
 
 # Create buttons
 btn_select_image = tk.Button(root, text="Select Image", command=select_image)
@@ -342,9 +389,4 @@ btn_select_dataset.pack(padx=10, pady=10)
 
 
 if __name__  == "__main__":
-    model, model_path = select_model()
-    model = model.to(device)
-    model.load_state_dict(torch.load(model_path, map_location=device))
-    model.eval()
-
     root.mainloop()
