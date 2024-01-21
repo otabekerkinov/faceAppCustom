@@ -9,32 +9,18 @@ from torch.utils.data import random_split
 from modelHandlers import *
 
 
-
-
-
-# # Load the pre-trained ResNet model
-# original_model = models.resnet18(pretrained=True)
-# # Instantiate the custom model
-# model = CustomResNet(original_model, dropout_rate=0.3)
-
-
 # Load the pre-trained GoogLeNet model
 original_model = models.resnet18(pretrained=True)
 # Instantiate the custom model
-model = CustomResNet(original_model, dropout_rate=0.3)
+model = CustomGoogLeNet(original_model)
 
-# Freeze all layers first
 for param in model.features.parameters():
     param.requires_grad = False
 
-# Unfreeze the last block (layer4) for fine-tuning
-for param in model.layer4.parameters():
+# Unfreeze selected layers for fine-tuning
+# For GoogLeNet, you might need to unfreeze specific Inception blocks
+for param in model.features[-1].parameters():  # Unfreezing the last block
     param.requires_grad = True
-
-
-# # FOR GOOGLENET
-# for param in model.features[-1].parameters():  # Unfreezing the last block
-#     param.requires_grad = True
 
 # Replace the final fully connected layer
 model.fc = nn.Linear(model.fc.in_features, 1)
@@ -48,7 +34,7 @@ transform = transforms.Compose([
 ])
 
 # Create the dataset
-face_age_dataset = FaceAgeDataset(root_dir='/Users/otabekerkinov/Desktop/images/face_age', transform=transform)
+face_age_dataset = FaceAgeDataset(root_dir='./images/face_age', transform=transform)
 
 # Split the dataset into train and validation sets
 train_size = int(0.8 * len(face_age_dataset))  # 80% of the dataset for training
@@ -129,7 +115,7 @@ for epoch in range(num_epochs):
     # Check if this is the best model so far
     if val_loss < best_val_loss:
         best_val_loss = val_loss
-        torch.save(model.state_dict(), 'best_age_detection_model_dropout_layer_with_scheduler_diff_params.pth')  # Save best model
+        torch.save(model.state_dict(), 'best_age_detection_model_layer_params_googleNet.pth')  # Save best model
 
 
 
