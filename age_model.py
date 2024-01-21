@@ -6,37 +6,22 @@ from torch.utils.data import DataLoader
 import torch.optim as optim
 from FaceAgeDataset import *
 from torch.utils.data import random_split
+from modelHandlers import *
 
 
 
-class CustomResNet(nn.Module):
-    def __init__(self, original_model, dropout_rate=0.5):
-        super(CustomResNet, self).__init__()
-        # Everything up to the last layer of layer4
-        self.features = nn.Sequential(*list(original_model.children())[:-2])
-        
-        # New dropout layer
-        self.dropout = nn.Dropout(dropout_rate)
 
-        # The last layer of layer4
-        self.layer4 = list(original_model.children())[-2]
 
-        # The original fully connected layer is replaced with a new one
-        self.fc = nn.Linear(original_model.fc.in_features, 1)
-    
-    def forward(self, x):
-        x = self.features(x)
-        x = self.layer4(x)
-        x = torch.flatten(x, 1)  # Flatten the features out
-        x = self.dropout(x)  # Apply dropout
-        x = self.fc(x)
-        return x
+# # Load the pre-trained ResNet model
+# original_model = models.resnet18(pretrained=True)
+# # Instantiate the custom model
+# model = CustomResNet(original_model, dropout_rate=0.3)
 
-# Load the pre-trained ResNet model
+
+# Load the pre-trained GoogLeNet model
 original_model = models.resnet18(pretrained=True)
 # Instantiate the custom model
-model = CustomResNet(original_model)
-
+model = CustomResNet(original_model, dropout_rate=0.3)
 
 # Freeze all layers first
 for param in model.features.parameters():
@@ -46,6 +31,10 @@ for param in model.features.parameters():
 for param in model.layer4.parameters():
     param.requires_grad = True
 
+
+# # FOR GOOGLENET
+# for param in model.features[-1].parameters():  # Unfreezing the last block
+#     param.requires_grad = True
 
 # Replace the final fully connected layer
 model.fc = nn.Linear(model.fc.in_features, 1)
@@ -59,7 +48,7 @@ transform = transforms.Compose([
 ])
 
 # Create the dataset
-face_age_dataset = FaceAgeDataset(root_dir='images/face_age', transform=transform)
+face_age_dataset = FaceAgeDataset(root_dir='/Users/otabekerkinov/Desktop/images/face_age', transform=transform)
 
 # Split the dataset into train and validation sets
 train_size = int(0.8 * len(face_age_dataset))  # 80% of the dataset for training
@@ -74,7 +63,11 @@ val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
 criterion = nn.MSELoss()
 
 # Optimizer with weight decay
-optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=0.001, weight_decay=1e-5)
+optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=0.001, weight_decay=1e-4)
+
+
+# After defining the optimizer
+scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.1)
 
 
 # Define device: use CUDA if available
@@ -109,6 +102,9 @@ for epoch in range(num_epochs):
         loss.backward()
         optimizer.step()
 
+    # update learning rate
+    scheduler.step()
+
     # Validation step
     model.eval()  # Set the model to evaluation mode
     with torch.no_grad():  # No gradient tracking needed
@@ -133,7 +129,7 @@ for epoch in range(num_epochs):
     # Check if this is the best model so far
     if val_loss < best_val_loss:
         best_val_loss = val_loss
-        torch.save(model.state_dict(), 'best_age_detection_model_dropout_layer.pth')  # Save best model
+        torch.save(model.state_dict(), 'best_age_detection_model_dropout_layer_with_scheduler_diff_params.pth')  # Save best model
 
 
 

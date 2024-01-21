@@ -13,7 +13,7 @@ import seaborn as sns
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import messagebox
-
+from modelHandlers import *
 
 failed_detections_file = 'failed_detections.txt'
 
@@ -28,51 +28,49 @@ else:
 failed_detections_file = os.path.join(application_path, 'failed_detections.txt')
 
 
-## NEEDED TO USE THE DROPOUT MODEL
-class CustomResNet(nn.Module):
-    def __init__(self, original_model, dropout_rate=0.5):
-        super(CustomResNet, self).__init__()
-        # Everything up to the last layer of layer4
-        self.features = nn.Sequential(*list(original_model.children())[:-2])
-        
-        # New dropout layer
-        self.dropout = nn.Dropout(dropout_rate)
+def select_model():
+    print("Select a model to use:")
+    print("1: CustomResNet with dropout and scheduler")
+    print("2: CustomResNet with dropout")
+    print("3: CustomGoogLeNet with layer params")
+    print("4: CustomResNet with more layers")
+    print("5: Standard ResNet")
 
-        # The last layer of layer4
-        self.layer4 = list(original_model.children())[-2]
+    choice = input("Enter the number of the model: ")
 
-        # The original fully connected layer is replaced with a new one
-        self.fc = nn.Linear(original_model.fc.in_features, 1)
+    if choice == '1':
+        model_path = os.path.join(application_path, 'best_age_detection_model_dropout_layer_with_scheduler_diff_params.pth')
+    elif choice == '2':
+        model_path = os.path.join(application_path, 'best_age_detection_model_dropout_layer.pth')
+    elif choice == '3':
+        model_path = os.path.join(application_path, 'best_age_detection_model_layer_params_googleNet.pth')
+    elif choice == '4':
+        model_path = os.path.join(application_path, 'best_age_detection_model_more_layers_saved.pth')
+    elif choice == '5':
+        model_path = os.path.join(application_path, 'best_age_detection_model.pth')
+    else:
+        raise ValueError("Invalid model choice.")
     
-    def forward(self, x):
-        x = self.features(x)
-        x = self.layer4(x)
-        x = torch.flatten(x, 1)  # Flatten the features out
-        x = self.dropout(x)  # Apply dropout
-        x = self.fc(x)
-        return x
+    # Load the corresponding model
+    if choice in ['1', '2', '4']:
+        original_model = models.resnet18(pretrained=False)
+        if choice == '1' or choice == '2':
+            model = CustomResNet(original_model, dropout_rate=0.3)  # adjust dropout_rate if necessary
+        else:
+            model = models.resnet18(pretrained=False)
+            model.fc = nn.Linear(model.fc.in_features, 1)
+    elif choice == '3':
+        original_model = models.googlenet(pretrained=False, init_weights=True)
+        model = CustomGoogLeNet(original_model)
+    elif choice == '5':
+        model = models.resnet18(pretrained=False)
+        model.fc = nn.Linear(model.fc.in_features, 1)
+    
+    return model, model_path
+        
 
-
-model_path = os.path.join(application_path, 'best_age_detection_model_dropout_layer.pth')
-
-# Load the pre-trained ResNet model
-original_model = models.resnet18(pretrained=False)
-# Instantiate the custom model
-model = CustomResNet(original_model)
-
-
-
-# Load the trained age detection model
-#model = models.resnet18(pretrained=False)
-#model.fc = nn.Linear(model.fc.in_features, 1)
 # Define device
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-model = model.to(device)
-model.load_state_dict(torch.load(model_path, map_location=device))
-model.eval()
-
-
-
 
 # Define transform for age prediction
 age_transform = transforms.Compose([
@@ -344,24 +342,9 @@ btn_select_dataset.pack(padx=10, pady=10)
 
 
 if __name__  == "__main__":
+    model, model_path = select_model()
+    model = model.to(device)
+    model.load_state_dict(torch.load(model_path, map_location=device))
+    model.eval()
+
     root.mainloop()
-    # if len(sys.argv) != 3:
-    #     print("Usage: python face_detection.py mode filepath")
-    #     print("mode: image, video, live")
-    #     sys.exit(1)
-
-    # mode = sys.argv[1]
-    # file_path = sys.argv[2]
-
-    # if mode == 'aug_img':
-    #     process_image_with_augmentation(file_path)
-    # elif mode == 'image':
-    #     process_image(file_path)
-    # elif mode == 'video':
-    #     process_video(file_path)
-    # elif mode == 'live':
-    #     live_video()
-    # elif mode == 'dataset':
-    #     process_dataset(file_path)
-    # else:
-    #     print("Invalid mode")
