@@ -30,40 +30,26 @@ failed_detections_file = os.path.join(application_path, 'failed_detections.txt')
 
 
 def select_model(choice):
-    # print("Select a model to use:")
-    # print("1: CustomResNet with dropout and scheduler")
-    # print("2: CustomResNet with dropout")
-    # print("3: CustomGoogLeNet with layer params")
-    # print("4: CustomResNet with more layers")
-    # print("5: Standard ResNet")
-
-    # choice = input("Enter the number of the model: ")
-
     if choice == '1':
         model_path = os.path.join(application_path, 'best_age_detection_model_dropout_layer_with_scheduler_diff_params.pth')
     elif choice == '2':
         model_path = os.path.join(application_path, 'best_age_detection_model_dropout_layer.pth')
     elif choice == '3':
-        model_path = os.path.join(application_path, 'best_age_detection_model_layer_params_googleNet.pth')
-    elif choice == '4':
         model_path = os.path.join(application_path, 'best_age_detection_model_more_layers_saved.pth')
-    elif choice == '5':
+    elif choice == '4':
         model_path = os.path.join(application_path, 'best_age_detection_model.pth')
     else:
         raise ValueError("Invalid model choice.")
     
     # Load the corresponding model
-    if choice in ['1', '2', '4']:
+    if choice in ['1', '2', '3']:
         original_model = models.resnet18(pretrained=False)
         if choice == '1' or choice == '2':
             model = CustomResNet(original_model, dropout_rate=0.3)  # adjust dropout_rate if necessary
         else:
             model = models.resnet18(pretrained=False)
             model.fc = nn.Linear(model.fc.in_features, 1)
-    elif choice == '3':
-        original_model = models.googlenet(pretrained=False, init_weights=True)
-        model = CustomGoogLeNet(original_model)
-    elif choice == '5':
+    elif choice == '4':
         model = models.resnet18(pretrained=False)
         model.fc = nn.Linear(model.fc.in_features, 1)
     
@@ -340,9 +326,8 @@ def on_model_select(event):
     model_choices = {
         "CustomResNet with dropout and scheduler": '1',
         "CustomResNet with dropout": '2',
-        "CustomGoogLeNet with layer params": '3',
-        "CustomResNet with more layers": '4',
-        "Standard ResNet": '5'
+        "CustomResNet with more layers": '3',
+        "Standard ResNet": '4'
     }
 
     model_name = model_var.get()
@@ -366,13 +351,12 @@ models_dropdown = ttk.Combobox(root, textvariable=model_var)
 models_dropdown['values'] = (
     "CustomResNet with dropout and scheduler",
     "CustomResNet with dropout",
-    "CustomGoogLeNet with layer params",
     "CustomResNet with more layers",
     "Standard ResNet with aug"
 )
 models_dropdown.pack(padx=10, pady=10)
 models_dropdown.bind('<<ComboboxSelected>>', on_model_select)
-
+models_dropdown.bind('<Return>', on_model_select) 
 
 # Create buttons
 btn_select_image = tk.Button(root, text="Select Image", command=select_image)
