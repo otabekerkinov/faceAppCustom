@@ -324,10 +324,10 @@ def on_model_select(event):
 
     # Map model names to choice numbers
     model_choices = {
-        "CustomResNet with dropout and scheduler": '1',
+        "CustomResNet with dropout and scheduler no aug": '1',
         "CustomResNet with dropout": '2',
         "CustomResNet with more layers": '3',
-        "Standard ResNet": '4'
+        "Standard ResNet with aug": '4'
     }
 
     model_name = model_var.get()
