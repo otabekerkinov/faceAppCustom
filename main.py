@@ -19,11 +19,11 @@ from modelHandlers import *
 failed_detections_file = 'failed_detections.txt'
 
 
-if getattr(sys, 'frozen', False):
-    # The application is running as a PyInstaller bundle
-    application_path = sys._MEIPASS
+if hasattr(sys, 'frozen'):
+    # If the application is running as a bundled app with py2app
+    application_path = os.environ['RESOURCEPATH']
 else:
-    # The application is running as a normal Python script
+    # If the application is running as a normal Python script
     application_path = os.path.dirname(os.path.abspath(__file__))
 
 failed_detections_file = os.path.join(application_path, 'failed_detections.txt')
