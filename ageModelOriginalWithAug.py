@@ -13,7 +13,7 @@ from torch.utils.data import random_split
 model = models.resnet18(pretrained=True)
 
 # Replace the final fully connected layer with a new one with the desired output size
-# Assuming we are treating age prediction as a regression problem
+# we are treating age prediction as a regression problem
 model.fc = nn.Linear(model.fc.in_features, 1)
 
 
