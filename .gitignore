@@ -9,3 +9,7 @@ progress.json
 /build
 /failed_detections.txt
 failed_detections.txt
+/venv
+/main.egg-info
+.idea
+.eggs

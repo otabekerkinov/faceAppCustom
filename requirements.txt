@@ -6,4 +6,3 @@ torchvision
 opencv-python
 scikit-learn
 seaborn
-pyinstaller
