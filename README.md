@@ -7,13 +7,13 @@ FaceAppCustom is an application designed for age estimation from facial images. 
 To install the libraries, run this command from the root directory:
 
 ```bash
-pip install -r requiremetns.txt
+pip install -r requirements.txt
 ```
 
 or
 
 ```bash
-pip install -r requiremetns.txt
+pip install -r requirements.txt
 ```
 
 ## Usage
