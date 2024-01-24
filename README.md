@@ -31,6 +31,10 @@ Choose the model from the dropdown menu, then choose an image, video file, or st
 ![image](https://github.com/otabekerkinov/faceAppCustom/assets/63511012/9bc5eb85-9c43-483c-aa22-2e0a9f561f95)
 
 
+After finishing the processing of the dataset, the program will show a confusion matrix with predicted ages, e.g:
+![image](https://github.com/otabekerkinov/faceAppCustom/assets/63511012/bcb9e524-5054-4e00-bdb8-20636801e494)
+
+
 Example of the UI:
 
 ![image](https://github.com/otabekerkinov/faceAppCustom/assets/63511012/6c0658f4-7b82-42f3-b616-a03f1b670323)
