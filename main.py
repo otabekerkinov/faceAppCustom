@@ -1,6 +1,8 @@
 import cv2
 import sys
 import numpy as np
+import matplotlib
+matplotlib.use("TkAgg")  # Set the backend to TkAgg
 import matplotlib.pyplot as plt
 import os
 import torch
@@ -15,13 +17,14 @@ from tkinter import filedialog
 from tkinter import messagebox
 from tkinter import ttk
 from modelHandlers import *
+import time
 
 failed_detections_file = 'failed_detections.txt'
 
 
-if hasattr(sys, 'frozen'):
-    # If the application is running as a bundled app with py2app
-    application_path = os.environ['RESOURCEPATH']
+if getattr(sys, 'frozen', False):
+    # If the application is running as a bundled app with PyInstaller
+    application_path = sys._MEIPASS
 else:
     # If the application is running as a normal Python script
     application_path = os.path.dirname(os.path.abspath(__file__))
@@ -29,6 +32,25 @@ else:
 failed_detections_file = os.path.join(application_path, 'failed_detections.txt')
 
 
+is_running = False
+video = cv2.VideoCapture()
+
+
+def on_close():
+    global is_running
+    is_running = False
+    if video.isOpened():
+        video.release()
+    cv2.destroyAllWindows()
+
+def on_close_main():
+    global is_running
+    if messagebox.askokcancel("Quit", "Do you want to close the application?"):
+        is_running = False
+        if video.isOpened():
+            video.release()
+        cv2.destroyAllWindows()
+        root.destroy()
 def select_model(choice):
     if choice == '1':
         model_path = os.path.join(application_path, 'best_age_detection_model_dropout_layer_with_scheduler_diff_params.pth')
@@ -101,31 +123,34 @@ def predict_age(face_image):
     return age_prediction
 
 
-# process_dataset processes all images of a given directory and plots the cumulative data
-def process_dataset(dataset_directory):
+def process_dataset(dataset_directory, progress_bar):
     actual_age_groups = []
     predicted_age_groups = []
 
     # Get the actual age labels for the dataset
     actual_age_labels = get_actual_age_labels(dataset_directory)
+    total_images = len(actual_age_labels)
+    processed_images = 0
 
-    # Iterate over each image path and its corresponding actual age in the dataset
     for image_path, actual_age in actual_age_labels.items():
         image = cv2.imread(image_path)
         if image is not None:
-            file_name = os.path.basename(image_path)
-            # The detect_faces function now returns predicted ages instead of face sizes    
-            _, _, predicted_ages = detect_faces(image, file_name)
-            # For each detected face, match the predicted age group with the actual age group
+            _, _, predicted_ages = detect_faces(image, os.path.basename(image_path))
             for predicted_age in predicted_ages:
                 predicted_age_group = map_age_to_group(predicted_age)
                 actual_age_group = map_age_to_group(actual_age)
                 predicted_age_groups.append(predicted_age_group)
                 actual_age_groups.append(actual_age_group)
+        
+        # Update progress
+        processed_images += 1
+        progress = 100 * processed_images / total_images
+        progress_bar['value'] = progress
+        root.update_idletasks()  # Update the UI
 
-    # Compute the confusion matrix and plot it
+    # Remove the progress bar after processing
+    progress_bar.pack_forget()
     compute_and_plot_confusion_matrix(actual_age_groups, predicted_age_groups)
-
 
 def compute_and_plot_confusion_matrix(actual_age_groups, predicted_age_groups):
     age_groups = ['1-9', '10-19', '20-29', '30-39', '40-49', '50-59', '60-69', '70-79', '80+']
@@ -255,6 +280,8 @@ def process_image_with_augmentation(file_path):
 def process_video(file_path):
     video = cv2.VideoCapture(file_path)
     all_face_sizes = []  # List to accumulate face sizes for all frames
+    cv2.namedWindow('Faces')
+    cv2.setWindowProperty('Faces', cv2.WND_PROP_TOPMOST, 1)
 
     while video.isOpened():
         ret, frame = video.read()
@@ -262,34 +289,48 @@ def process_video(file_path):
             detected_frame, faces, face_sizes = detect_faces(frame)
             all_face_sizes.extend(face_sizes)  # Accumulate face sizes
             cv2.imshow('Faces', detected_frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            # Check if 'q' is pressed or the 'X' window button is clicked
+            if cv2.waitKey(1) & 0xFF == ord('q') or cv2.getWindowProperty('Faces', 0) < 0:
                 break
         else:
             break
 
     video.release()
     cv2.destroyAllWindows()
-    plot_age_data(all_face_sizes)
 
-
+    
 def live_video():
-    video = cv2.VideoCapture(0)
+    global is_running, video
+    video = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+    time.sleep(5.000)
+    if not video.isOpened():
+        # If DSHOW doesn't work, fall back to the default
+        video = cv2.VideoCapture(0)
+    
     all_face_sizes = []  # List to accumulate face sizes for all frames
+    
+    is_running = True
+    
+    cv2.namedWindow('Faces')
+    cv2.setWindowProperty('Faces', cv2.WND_PROP_TOPMOST, 1)
 
-    while True:
+
+    while is_running:
         ret, frame = video.read()
         if ret:
             detected_frame, faces, face_sizes = detect_faces(frame)
-            all_face_sizes.extend(face_sizes)  # Accumulate face sizes
+            all_face_sizes.extend(face_sizes)
             cv2.imshow('Faces', detected_frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+            if cv2.waitKey(1) & 0xFF == ord('q') or cv2.getWindowProperty('Faces', 0) < 0:
+                # User pressed 'q' or clicked the 'X' to close the window
+                is_running = False
         else:
-            break
+            is_running = False
 
     video.release()
     cv2.destroyAllWindows()
-    plot_age_data(all_face_sizes)
+
+
 
 
 def select_image():
@@ -305,7 +346,11 @@ def select_video():
 def select_dataset():
     file_path = filedialog.askdirectory()
     if file_path:
-         process_dataset(file_path)
+        # Create and pack the progress bar
+        progress_bar = ttk.Progressbar(root, orient=tk.HORIZONTAL, length=300, mode='determinate')
+        progress_bar.pack(pady=10)
+        # Start processing the dataset
+        root.after(100, process_dataset, file_path, progress_bar)
 
 def start_live_video():
     live_video()
@@ -335,11 +380,10 @@ def on_model_select(event):
 
     if model_choice is not None:
         model = load_model(model_choice)
-        messagebox.showinfo("Model Loaded", f"You have selected {model_name} model.")
     else:
         messagebox.showerror("Error", "Invalid model choice.")
 
-# Create the main window
+
 root = tk.Tk()
 root.title("Face and Age Detection")
 
@@ -373,4 +417,5 @@ btn_select_dataset.pack(padx=10, pady=10)
 
 
 if __name__  == "__main__":
+    root.protocol("WM_DELETE_WINDOW", on_close_main)  # Set the callback for Tkinter window close
     root.mainloop()
