@@ -61,7 +61,7 @@ The dataset we used is not included in this repo, you can find and download it h
 https://www.kaggle.com/datasets/frabbisw/facial-age
 
 # Release
-For the Windows executable download the _internal.zip  from releases: https://github.com/otabekerkinov/faceAppCustom/releases/tag/main
+For the Windows executable download the latest .zip file from releases: [https://github.com/otabekerkinov/faceAppCustom/releases](https://github.com/otabekerkinov/faceAppCustom/releases)
 
 You might get a popup from Windows, saying that the app is not secure to run or something similar
 ![windows-protected-your-pc-1-3228650663](https://github.com/otabekerkinov/faceAppCustom/assets/63511012/d40ce517-17b1-4c9f-b578-803ac31b1269)
